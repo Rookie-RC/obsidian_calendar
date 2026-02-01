@@ -10,7 +10,8 @@ const context = await esbuild.context({
   bundle: true,
   outfile: "dist/main.js",
   sourcemap: "inline",
-  platform: "browser",
+  format: "cjs",
+  platform: "node",
   target: "es2020",
   define: {
     "process.env.NODE_ENV": JSON.stringify(isWatch ? "development" : "production")

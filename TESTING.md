@@ -3,6 +3,7 @@
 This guide explains how to build and test the plugin locally in Obsidian.
 
 ## Prerequisites
+
 - Node.js 18+ (for esbuild and TypeScript).
 - Obsidian desktop app.
 
@@ -28,11 +29,13 @@ Create a plugin folder in your vault (replace `<vault>` with your vault path):
 <vault>/.obsidian/plugins/obsidian-calendar-mvp/
 ```
 
-Copy the following files into it:
+Copy the following files into it (place them at the plugin folder root):
+
 - `manifest.json`
-- `dist/main.js`
+- `dist/main.js` → rename to `main.js`
 
 Optional (for debugging):
+
 - `dist/main.js.map` (if present)
 
 ## 4. Enable the plugin in Obsidian
@@ -50,6 +53,7 @@ Optional (for debugging):
 ## 6. Open the Calendar view
 
 Use any of these:
+
 - Ribbon icon (calendar).
 - Command palette:
   - **Open calendar**

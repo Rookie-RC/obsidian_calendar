@@ -1,13 +1,10 @@
-export type CalendarEvent = {
-  id: string;
-  summary: string;
-  start: Date;
-  end: Date;
-  allDay: boolean;
-};
+import { ParsedIcalEvent } from "./types";
 
 const DATE_ONLY = /^\d{8}$/;
 const DATE_TIME = /^\d{8}T\d{6}Z?$/;
+
+const addDays = (date: Date, days: number) =>
+  new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
 
 const parseDateValue = (raw: string): { date: Date; allDay: boolean } => {
   if (DATE_ONLY.test(raw)) {
@@ -49,10 +46,10 @@ const unfoldLines = (text: string): string[] => {
   return unfolded;
 };
 
-export const parseIcal = (text: string): CalendarEvent[] => {
-  const events: CalendarEvent[] = [];
+export const parseIcal = (text: string): ParsedIcalEvent[] => {
+  const events: ParsedIcalEvent[] = [];
   const lines = unfoldLines(text);
-  let current: Partial<CalendarEvent> = {};
+  let current: Partial<ParsedIcalEvent> = {};
 
   for (const line of lines) {
     if (line === "BEGIN:VEVENT") {
@@ -60,7 +57,13 @@ export const parseIcal = (text: string): CalendarEvent[] => {
       continue;
     }
     if (line === "END:VEVENT") {
-      if (current.start && current.end) {
+      if (current.start) {
+        if (!current.end) {
+          current.end = current.start;
+        }
+        if (current.allDay && current.end.getTime() > current.start.getTime()) {
+          current.end = addDays(current.end, -1);
+        }
         events.push({
           id: current.id ?? crypto.randomUUID(),
           summary: current.summary ?? "Untitled",

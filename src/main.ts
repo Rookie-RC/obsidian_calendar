@@ -139,6 +139,10 @@ class CalendarView extends ItemView {
     return "Calendar";
   }
 
+  getIcon() {
+    return "calendar";
+  }
+
   async onOpen() {
     this.containerEl.empty();
     this.containerEl.addClass("obsidian-calendar");
@@ -341,7 +345,7 @@ class CalendarView extends ItemView {
       this.detailsEl.createDiv({ cls: "obsidian-calendar__details-empty", text: "No notes or events" });
     }
 
-    if (notes.length === 0 && this.plugin.settings.allowCreateNote) {
+    if (this.plugin.settings.allowCreateNote) {
       const action = this.detailsEl.createDiv({ cls: "obsidian-calendar__details-action" });
       const button = action.createEl("button", { text: "Create note" });
       button.addEventListener("click", async () => {
@@ -392,13 +396,15 @@ class CalendarView extends ItemView {
           }
           const key = formatDateKey(date);
           const list = index.get(key) ?? [];
-          const title = file.basename;
-          list.push({
-            file,
-            title,
-            excerpt: this.noteExcerptCache.get(file.path) ?? ""
-          });
-          index.set(key, list);
+          if (!list.some((note) => note.file.path === file.path)) {
+            const title = file.basename;
+            list.push({
+              file,
+              title,
+              excerpt: this.noteExcerptCache.get(file.path) ?? ""
+            });
+            index.set(key, list);
+          }
         }
       }
     }
@@ -879,14 +885,14 @@ export default class CalendarPlugin extends Plugin {
         background: var(--background-primary);
         --calendar-today-accent: var(--interactive-accent);
         --calendar-selected-accent: var(--interactive-accent);
-        --calendar-note-bar-color: var(--text-accent);
+        --calendar-note-bar-color: #5eb8d5;
       }
       .obsidian-calendar__header {
-        padding: 12px 16px;
+        padding: 16px 20px;
         border-bottom: 1px solid var(--background-modifier-border);
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
       }
       .obsidian-calendar__nav {
         display: flex;
@@ -896,110 +902,138 @@ export default class CalendarPlugin extends Plugin {
       .obsidian-calendar__nav button {
         background: transparent;
         border: 1px solid var(--background-modifier-border);
-        padding: 4px 10px;
-        border-radius: 6px;
+        padding: 5px 12px;
+        border-radius: 4px;
         color: var(--text-normal);
         cursor: pointer;
+        font-size: 13px;
       }
       .obsidian-calendar__nav button:hover {
         background: var(--background-modifier-hover);
       }
       .obsidian-calendar__title {
-        font-size: 16px;
+        font-size: 17px;
         font-weight: 600;
+        letter-spacing: -0.01em;
       }
       .obsidian-calendar__body {
-        padding: 12px 16px 16px;
+        padding: 20px 24px 24px;
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 24px;
         overflow: auto;
       }
       .obsidian-calendar__grid {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 12px;
       }
       .obsidian-calendar__weekdays {
         display: grid;
         grid-template-columns: repeat(7, minmax(0, 1fr));
-        font-size: 11px;
+        gap: 4px;
+        font-size: 10px;
         color: var(--text-muted);
         text-transform: uppercase;
-        letter-spacing: 0.04em;
-        opacity: 0.9;
+        letter-spacing: 0.05em;
+        font-weight: 500;
+        opacity: 0.8;
+        margin-bottom: 2px;
       }
       .obsidian-calendar__weekday {
-        padding: 2px 4px;
+        padding: 4px;
+        text-align: center;
       }
       .obsidian-calendar__days {
         display: grid;
         grid-template-columns: repeat(7, minmax(0, 1fr));
-        gap: 6px;
+        gap: 8px;
       }
       .obsidian-calendar__day {
         border: none;
         background: transparent;
-        border-radius: 10px;
-        padding: 8px 6px 10px;
+        border-radius: 4px;
+        padding: 12px 4px 8px;
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        gap: 4px;
-        min-height: 58px;
+        justify-content: flex-start;
+        gap: 3px;
+        min-height: 72px;
         cursor: pointer;
+        position: relative;
       }
       .obsidian-calendar__day.is-outside {
-        color: var(--text-muted);
+        opacity: 0.4;
       }
       .obsidian-calendar__day.is-weekend {
-        color: var(--text-muted);
+        opacity: 0.65;
       }
-      .obsidian-calendar__day.is-today {
-        background: color-mix(in srgb, var(--calendar-today-accent) 14%, var(--background-primary));
+      .obsidian-calendar__day.is-today .obsidian-calendar__day-number::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 22px;
+        height: 3px;
+        background: var(--calendar-today-accent);
+        border-radius: 2px;
       }
-      .obsidian-calendar__day.is-selected {
-        box-shadow: inset 0 0 0 1px var(--calendar-selected-accent);
+      .obsidian-calendar__day.is-selected .obsidian-calendar__day-number::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 22px;
+        height: 3px;
+        background: var(--calendar-selected-accent);
+        border-radius: 2px;
       }
-      .obsidian-calendar__day.is-today.is-selected {
-        background: color-mix(in srgb, var(--calendar-today-accent) 14%, var(--background-primary));
-        box-shadow: inset 0 0 0 1px var(--calendar-selected-accent);
+      .obsidian-calendar__day.is-today.is-selected .obsidian-calendar__day-number::after {
+        background: var(--calendar-today-accent);
       }
       .obsidian-calendar__day-number {
-        font-size: 16px;
-        font-weight: 600;
+        font-size: 17px;
+        font-weight: 500;
+        line-height: 1;
+        position: relative;
+        padding-bottom: 4px;
       }
       .obsidian-calendar__day-subtitle {
-        font-size: 11px;
+        font-size: 10px;
         color: var(--text-muted);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         width: 100%;
         text-align: center;
-        min-height: 14px;
+        min-height: 12px;
+        font-weight: 400;
+        opacity: 0.8;
       }
       .obsidian-calendar__day-indicator {
-        min-height: 8px;
+        min-height: 6px;
         display: flex;
         align-items: center;
         justify-content: center;
         width: 100%;
+        margin-top: 2px;
       }
       .obsidian-calendar__day-bar {
         height: 2px;
-        border-radius: 999px;
+        border-radius: 1px;
         background: var(--calendar-note-bar-color);
-        opacity: 0.6;
+        opacity: 0.5;
       }
       .obsidian-calendar__note-preview {
         position: fixed;
         background: var(--background-primary);
         border: 1px solid var(--background-modifier-border);
-        border-radius: 8px;
-        padding: 8px;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+        border-radius: 4px;
+        padding: 10px 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         display: none;
         z-index: 9999;
         pointer-events: none;
@@ -1007,12 +1041,12 @@ export default class CalendarPlugin extends Plugin {
       .obsidian-calendar__note-preview-row {
         display: flex;
         flex-direction: column;
-        gap: 2px;
-        padding: 4px 0;
+        gap: 3px;
+        padding: 5px 0;
       }
       .obsidian-calendar__note-preview-title {
         font-size: 12px;
-        font-weight: 600;
+        font-weight: 500;
         color: var(--text-normal);
         white-space: nowrap;
         overflow: hidden;
@@ -1024,54 +1058,64 @@ export default class CalendarPlugin extends Plugin {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        opacity: 0.9;
       }
       .obsidian-calendar__details-title {
-        font-size: 14px;
+        font-size: 15px;
         font-weight: 600;
+        letter-spacing: -0.01em;
+        margin-bottom: 4px;
       }
       .obsidian-calendar__details {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 16px;
       }
       .obsidian-calendar__section {
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 8px;
       }
       .obsidian-calendar__notes-list,
       .obsidian-calendar__event-list {
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 4px;
       }
       .obsidian-calendar__section-title {
-        font-size: 12px;
+        font-size: 11px;
         color: var(--text-muted);
         text-transform: uppercase;
-        letter-spacing: 0.04em;
-        margin-top: 4px;
+        letter-spacing: 0.06em;
+        font-weight: 500;
+        margin-bottom: 2px;
+        opacity: 0.8;
       }
       .obsidian-calendar__note-row {
         border: none;
         background: transparent;
         text-align: left;
-        padding: 6px 0;
+        padding: 10px 8px;
         display: block;
         cursor: pointer;
         width: 100%;
         box-sizing: border-box;
-        height: 40px;
+        min-height: 52px;
         overflow: hidden;
+        border-radius: 4px;
+      }
+      .obsidian-calendar__note-row:hover {
+        opacity: 0.8;
       }
       .obsidian-calendar__note-title {
         font-size: 13px;
         color: var(--text-normal);
-        font-weight: 600;
+        font-weight: 500;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        line-height: 1.2;
+        line-height: 1.3;
+        margin-bottom: 2px;
       }
       .obsidian-calendar__note-excerpt {
         font-size: 12px;
@@ -1079,36 +1123,45 @@ export default class CalendarPlugin extends Plugin {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        line-height: 1.2;
+        line-height: 1.3;
+        opacity: 0.85;
       }
       .obsidian-calendar__event-row {
         display: grid;
-        grid-template-columns: 72px 1fr;
-        gap: 12px;
-        padding: 4px 0;
+        grid-template-columns: 68px 1fr;
+        gap: 14px;
+        padding: 6px 0;
         width: 100%;
         box-sizing: border-box;
       }
       .obsidian-calendar__event-time {
         font-size: 12px;
         color: var(--text-muted);
+        font-weight: 400;
+        opacity: 0.85;
       }
       .obsidian-calendar__event-summary {
         font-size: 13px;
+        font-weight: 400;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        line-height: 1.3;
       }
       .obsidian-calendar__details-action {
-        margin-top: 8px;
+        margin-top: 4px;
       }
       .obsidian-calendar__details-action button {
         background: transparent;
         border: 1px solid var(--background-modifier-border);
-        padding: 4px 10px;
-        border-radius: 6px;
+        padding: 6px 14px;
+        border-radius: 4px;
         color: var(--text-normal);
         cursor: pointer;
+        font-size: 13px;
+      }
+      .obsidian-calendar__details-action button:hover {
+        background: var(--background-modifier-hover);
       }
       .obsidian-calendar__setting-hint {
         font-size: 12px;
@@ -1120,13 +1173,14 @@ export default class CalendarPlugin extends Plugin {
       }
       .obsidian-calendar__details-row {
         display: grid;
-        grid-template-columns: 72px 1fr;
-        gap: 12px;
-        padding: 4px 0;
+        grid-template-columns: 68px 1fr;
+        gap: 14px;
+        padding: 6px 0;
       }
       .obsidian-calendar__details-time {
         font-size: 12px;
         color: var(--text-muted);
+        opacity: 0.85;
       }
       .obsidian-calendar__details-summary {
         font-size: 13px;
@@ -1134,6 +1188,7 @@ export default class CalendarPlugin extends Plugin {
       .obsidian-calendar__details-empty {
         font-size: 12px;
         color: var(--text-muted);
+        opacity: 0.75;
       }
     `;
     styleEl.dataset.calendarView = "true";

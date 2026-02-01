@@ -18,13 +18,53 @@ const DEFAULT_SETTINGS: CalendarSettings = {
   sources: [],
   weekStart: "sunday",
   timeFormat: "24h",
+  language: "en",
   refreshIntervalMinutes: 30,
-  todayHighlight: "--interactive-accent",
-  selectedHighlight: "--text-accent",
+  todayHighlight: "#29a5c7",
+  selectedHighlight: "#54df26",
   noteDateFields: ["date"],
   allowCreateNote: true,
   noteTemplatePath: "",
-  noteBarColor: "--text-accent"
+  noteBarColor: "#ea640b"
+};
+
+const TRANSLATIONS: Record<string, Record<string, string>> = {
+  en: {
+    today: "Today",
+    refresh: "Refresh",
+    createNote: "Create note",
+    events: "Events",
+    notes: "Notes",
+    allDay: "All day",
+    noNotesOrEvents: "No notes or events",
+    sun: "Sun",
+    mon: "Mon",
+    tue: "Tue",
+    wed: "Wed",
+    thu: "Thu",
+    fri: "Fri",
+    sat: "Sat"
+  },
+  zh: {
+    today: "今天",
+    refresh: "刷新",
+    createNote: "新建笔记",
+    events: "日程",
+    notes: "笔记",
+    allDay: "全天",
+    noNotesOrEvents: "暂无笔记或日程",
+    sun: "周日",
+    mon: "周一",
+    tue: "周二",
+    wed: "周三",
+    thu: "周四",
+    fri: "周五",
+    sat: "周六"
+  }
+};
+
+const t = (key: string, lang: "en" | "zh"): string => {
+  return TRANSLATIONS[lang]?.[key] ?? TRANSLATIONS.en[key] ?? key;
 };
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -42,6 +82,21 @@ const resolveHighlightValue = (value: string, fallbackVar: string) => {
 };
 
 const normalizePathSlashes = (value: string) => value.replace(/\\/g, "/");
+
+const DEFAULT_SOURCE_COLORS = [
+  "#e74c3c", // red
+  "#3498db", // blue
+  "#2ecc71", // green
+  "#f39c12", // orange
+  "#9b59b6", // purple
+  "#1abc9c", // turquoise
+  "#e67e22", // carrot
+  "#34495e"  // dark gray
+];
+
+const getDefaultSourceColor = (index: number): string => {
+  return DEFAULT_SOURCE_COLORS[index % DEFAULT_SOURCE_COLORS.length];
+};
 
 type LinkedNote = {
   file: TFile;
@@ -119,7 +174,9 @@ class CalendarView extends ItemView {
   private visibleMonth = new Date();
   private events: CalendarEvent[] = [];
   private headerTitle?: HTMLElement;
+  private legendEl?: HTMLElement;
   private gridEl?: HTMLElement;
+  private navEl?: HTMLElement;
   private detailsEl?: HTMLElement;
   private notesByDate = new Map<string, LinkedNote[]>();
   private noteExcerptCache = new Map<string, string>();
@@ -171,18 +228,37 @@ class CalendarView extends ItemView {
 
   private buildLayout() {
     const header = this.containerEl.createDiv({ cls: "obsidian-calendar__header" });
-    const nav = header.createDiv({ cls: "obsidian-calendar__nav" });
-
-    const prevBtn = nav.createEl("button", { text: "←" });
-    const nextBtn = nav.createEl("button", { text: "→" });
-    const todayBtn = nav.createEl("button", { text: "Today" });
-    const refreshBtn = nav.createEl("button", { text: "Refresh" });
 
     this.headerTitle = header.createDiv({ cls: "obsidian-calendar__title" });
 
+    this.legendEl = header.createDiv({ cls: "obsidian-calendar__legend" });
+
     const body = this.containerEl.createDiv({ cls: "obsidian-calendar__body" });
     this.gridEl = body.createDiv({ cls: "obsidian-calendar__grid" });
+
+    this.navEl = body.createDiv({ cls: "obsidian-calendar__nav" });
+
     this.detailsEl = body.createDiv({ cls: "obsidian-calendar__details" });
+  }
+
+  private renderNav() {
+    if (!this.navEl) return;
+
+    this.navEl.empty();
+    const lang = this.plugin.settings.language;
+
+    // 左侧：上一页
+    const leftGroup = this.navEl.createDiv({ cls: "obsidian-calendar__nav-left" });
+    const prevBtn = leftGroup.createEl("button", { text: "←" });
+
+    // 中间：今天和刷新
+    const centerGroup = this.navEl.createDiv({ cls: "obsidian-calendar__nav-center" });
+    const todayBtn = centerGroup.createEl("button", { text: t("today", lang) });
+    const refreshBtn = centerGroup.createEl("button", { text: t("refresh", lang) });
+
+    // 右侧：下一页
+    const rightGroup = this.navEl.createDiv({ cls: "obsidian-calendar__nav-right" });
+    const nextBtn = rightGroup.createEl("button", { text: "→" });
 
     prevBtn.addEventListener("click", () => {
       this.visibleMonth = new Date(this.visibleMonth.getFullYear(), this.visibleMonth.getMonth() - 1, 1);
@@ -211,27 +287,34 @@ class CalendarView extends ItemView {
     this.gridEl.empty();
     this.detailsEl.empty();
 
+    this.updateLegend();
+    this.renderNav();
+
+    const lang = this.plugin.settings.language;
+
     const monthStart = startOfMonth(this.visibleMonth);
     const monthEnd = endOfMonth(this.visibleMonth);
     const startWeekday = this.plugin.settings.weekStart === "monday" ? 1 : 0;
     const offset = (monthStart.getDay() - startWeekday + 7) % 7;
     const gridStart = addDays(monthStart, -offset);
-    const gridEnd = addDays(monthEnd, (6 - ((monthEnd.getDay() - startWeekday + 7) % 7)));
+    // 固定显示6行（42天）
+    const gridEnd = addDays(gridStart, 41);
 
     this.notesByDate = this.buildNotesIndex(gridStart, gridEnd);
     this.maxNotesForGrid = this.getMaxNotesCount();
 
     this.headerTitle.setText(
-      monthStart.toLocaleDateString([], { year: "numeric", month: "long" })
+      monthStart.toLocaleDateString(lang === "zh" ? "zh-CN" : "en-US", { year: "numeric", month: "long" })
     );
 
     const weekdayRow = this.gridEl.createDiv({ cls: "obsidian-calendar__weekdays" });
-    const labels = this.plugin.settings.weekStart === "monday"
-      ? [...WEEKDAY_LABELS.slice(1), WEEKDAY_LABELS[0]]
-      : WEEKDAY_LABELS;
+    // 使用翻译的星期名称
+    const weekdayKeys = this.plugin.settings.weekStart === "monday"
+      ? ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+      : ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
-    for (const label of labels) {
-      weekdayRow.createDiv({ cls: "obsidian-calendar__weekday", text: label });
+    for (const key of weekdayKeys) {
+      weekdayRow.createDiv({ cls: "obsidian-calendar__weekday", text: t(key, lang) });
     }
 
     const daysGrid = this.gridEl.createDiv({ cls: "obsidian-calendar__days" });
@@ -246,9 +329,6 @@ class CalendarView extends ItemView {
       if (cellDate.getMonth() !== this.visibleMonth.getMonth()) {
         cell.addClass("is-outside");
       }
-      if (cellDate.getDay() === 0 || cellDate.getDay() === 6) {
-        cell.addClass("is-weekend");
-      }
       if (isSameDay(cellDate, today)) {
         cell.addClass("is-today");
       }
@@ -259,15 +339,25 @@ class CalendarView extends ItemView {
       const numberEl = cell.createDiv({ cls: "obsidian-calendar__day-number" });
       numberEl.setText(String(cellDate.getDate()));
 
-      const subtitle = cell.createDiv({ cls: "obsidian-calendar__day-subtitle" });
+      const subtitleContainer = cell.createDiv({ cls: "obsidian-calendar__day-subtitles" });
       const notesForDay = this.getNotesForDay(cellDate);
+      const dayEvents = this.getEventsForDay(cellDate);
+
+      // 显示日程（使用源颜色）
+      if (dayEvents.length > 0) {
+        const source = this.plugin.settings.sources.find(s => s.id === dayEvents[0].sourceId);
+        const color = source?.color || getDefaultSourceColor(0);
+        numberEl.style.color = color;
+
+        const eventLine = subtitleContainer.createDiv({ cls: "obsidian-calendar__day-subtitle obsidian-calendar__day-event" });
+        eventLine.style.color = color;
+        eventLine.setText(dayEvents[0].summary);
+      }
+
+      // 显示笔记（保持默认颜色）
       if (notesForDay.length > 0) {
-        subtitle.setText(notesForDay[0].title);
-      } else {
-        const dayEvents = this.getEventsForDay(cellDate);
-        if (dayEvents.length > 0) {
-          subtitle.setText(dayEvents[0].summary);
-        }
+        const noteLine = subtitleContainer.createDiv({ cls: "obsidian-calendar__day-subtitle obsidian-calendar__day-note" });
+        noteLine.setText(notesForDay[0].title);
       }
 
       const indicator = cell.createDiv({ cls: "obsidian-calendar__day-indicator" });
@@ -299,15 +389,37 @@ class CalendarView extends ItemView {
     this.renderDetails();
   }
 
+  private updateLegend() {
+    if (!this.legendEl) {
+      return;
+    }
+
+    this.legendEl.empty();
+
+    const enabledSources = this.plugin.settings.sources.filter(s => s.enabled && s.name);
+    if (enabledSources.length === 0) {
+      return;
+    }
+
+    for (const source of enabledSources) {
+      const item = this.legendEl.createDiv({ cls: "obsidian-calendar__legend-item" });
+      const dot = item.createDiv({ cls: "obsidian-calendar__legend-dot" });
+      dot.style.backgroundColor = source.color;
+      item.createDiv({ cls: "obsidian-calendar__legend-label", text: source.name });
+    }
+  }
+
   private renderDetails() {
     if (!this.detailsEl) {
       return;
     }
     this.detailsEl.empty();
 
+    const lang = this.plugin.settings.language;
+
     const title = this.detailsEl.createDiv({ cls: "obsidian-calendar__details-title" });
     title.setText(
-      this.selectedDate.toLocaleDateString([], { month: "long", day: "numeric", year: "numeric" })
+      this.selectedDate.toLocaleDateString(lang === "zh" ? "zh-CN" : "en-US", { month: "long", day: "numeric", year: "numeric" })
     );
 
     const notes = this.getNotesForDay(this.selectedDate);
@@ -315,13 +427,19 @@ class CalendarView extends ItemView {
 
     if (events.length > 0) {
       const eventsSection = this.detailsEl.createDiv({ cls: "obsidian-calendar__section" });
-      eventsSection.createDiv({ cls: "obsidian-calendar__section-title", text: "Events" });
+      eventsSection.createDiv({ cls: "obsidian-calendar__section-title", text: t("events", lang) });
       const eventsList = eventsSection.createDiv({ cls: "obsidian-calendar__event-list" });
       for (const event of events) {
         const row = eventsList.createDiv({ cls: "obsidian-calendar__event-row" });
+
+        // Find source color
+        const source = this.plugin.settings.sources.find(s => s.id === event.sourceId);
+        const color = source?.color || getDefaultSourceColor(0);
+        row.style.borderLeft = `3px solid ${color}`;
+
         row.createDiv({
           cls: "obsidian-calendar__event-time",
-          text: event.allDay ? "All day" : formatTime(event.start, this.plugin.settings.timeFormat)
+          text: event.allDay ? t("allDay", lang) : formatTime(event.start, this.plugin.settings.timeFormat)
         });
         row.createDiv({ cls: "obsidian-calendar__event-summary", text: event.summary });
       }
@@ -329,7 +447,7 @@ class CalendarView extends ItemView {
 
     if (notes.length > 0) {
       const notesSection = this.detailsEl.createDiv({ cls: "obsidian-calendar__section" });
-      notesSection.createDiv({ cls: "obsidian-calendar__section-title", text: "Notes" });
+      notesSection.createDiv({ cls: "obsidian-calendar__section-title", text: t("notes", lang) });
       const notesList = notesSection.createDiv({ cls: "obsidian-calendar__notes-list" });
       for (const note of notes) {
         const row = notesList.createEl("button", { cls: "obsidian-calendar__note-row" });
@@ -342,12 +460,12 @@ class CalendarView extends ItemView {
     }
 
     if (notes.length === 0 && events.length === 0) {
-      this.detailsEl.createDiv({ cls: "obsidian-calendar__details-empty", text: "No notes or events" });
+      this.detailsEl.createDiv({ cls: "obsidian-calendar__details-empty", text: t("noNotesOrEvents", lang) });
     }
 
     if (this.plugin.settings.allowCreateNote) {
       const action = this.detailsEl.createDiv({ cls: "obsidian-calendar__details-action" });
-      const button = action.createEl("button", { text: "Create note" });
+      const button = action.createEl("button", { text: t("createNote", lang) });
       button.addEventListener("click", async () => {
         const file = await this.plugin.createNoteForDate(this.selectedDate);
         if (file) {
@@ -540,6 +658,21 @@ class CalendarSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
             this.plugin.refreshEvents(true);
             this.plugin.restartAutoRefresh();
+          })
+      );
+
+    new Setting(containerEl)
+      .setName("Language")
+      .setDesc("Display language for the calendar interface.")
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("en", "English")
+          .addOption("zh", "中文")
+          .setValue(this.plugin.settings.language)
+          .onChange(async (value: CalendarSettings["language"]) => {
+            this.plugin.settings.language = value;
+            await this.plugin.saveSettings();
+            this.plugin.renderViews();
           })
       );
 
@@ -754,6 +887,19 @@ class CalendarSettingTab extends PluginSettingTab {
               this.plugin.refreshEvents(true);
             })
         );
+
+      new Setting(containerEl)
+        .setName("Color")
+        .setDesc("Event color for this source.")
+        .addColorPicker((picker) =>
+          picker
+            .setValue(source.color)
+            .onChange(async (value) => {
+              source.color = value;
+              await this.plugin.saveSettings();
+              this.plugin.renderViews();
+            })
+        );
     }
 
     new Setting(containerEl)
@@ -763,11 +909,13 @@ class CalendarSettingTab extends PluginSettingTab {
         button
           .setButtonText("Add")
           .onClick(async () => {
+            const newIndex = this.plugin.settings.sources.length;
             this.plugin.settings.sources.push({
               id: createSourceId(),
               name: "",
               enabled: true,
-              url: ""
+              url: "",
+              color: getDefaultSourceColor(newIndex)
             });
             await this.plugin.saveSettings();
             this.display();
@@ -807,6 +955,15 @@ export default class CalendarPlugin extends Plugin {
   }
 
   async activateView() {
+    // 检查是否已经存在 calendar 视图
+    const existingLeaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR);
+    if (existingLeaves.length > 0) {
+      // 如果已存在，只需激活第一个
+      this.app.workspace.revealLeaf(existingLeaves[0]);
+      return;
+    }
+
+    // 如果不存在，创建新的
     const leaf = this.app.workspace.getRightLeaf(false) ?? this.app.workspace.getLeaf(false);
     await leaf.setViewState({ type: VIEW_TYPE_CALENDAR, active: true });
     this.app.workspace.revealLeaf(leaf);
@@ -896,25 +1053,58 @@ export default class CalendarPlugin extends Plugin {
       }
       .obsidian-calendar__nav {
         display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+      }
+      .obsidian-calendar__nav-left,
+      .obsidian-calendar__nav-right {
+        flex: 0 0 auto;
+      }
+      .obsidian-calendar__nav-center {
+        display: flex;
+        gap: 16px;
       }
       .obsidian-calendar__nav button {
         background: transparent;
-        border: 1px solid var(--background-modifier-border);
-        padding: 5px 12px;
-        border-radius: 4px;
-        color: var(--text-normal);
+        border: none;
+        padding: 6px 12px;
+        border-radius: 0;
+        color: var(--text-muted);
         cursor: pointer;
         font-size: 13px;
+        transition: color 0.15s ease;
       }
       .obsidian-calendar__nav button:hover {
-        background: var(--background-modifier-hover);
+        color: var(--text-normal);
+        background: transparent;
       }
       .obsidian-calendar__title {
         font-size: 17px;
         font-weight: 600;
         letter-spacing: -0.01em;
+      }
+      .obsidian-calendar__legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+      }
+      .obsidian-calendar__legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .obsidian-calendar__legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .obsidian-calendar__legend-label {
+        font-size: 12px;
+        color: var(--text-muted);
+        white-space: nowrap;
       }
       .obsidian-calendar__body {
         padding: 20px 24px 24px;
@@ -947,27 +1137,31 @@ export default class CalendarPlugin extends Plugin {
       .obsidian-calendar__days {
         display: grid;
         grid-template-columns: repeat(7, minmax(0, 1fr));
-        gap: 8px;
+        gap: 0;
       }
       .obsidian-calendar__day {
-        border: none;
-        background: transparent;
-        border-radius: 4px;
-        padding: 12px 4px 8px;
+        border: none !important;
+        background: transparent !important;
+        border-radius: 0 !important;
+        padding: 16px 4px 12px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: flex-start;
         gap: 3px;
-        min-height: 72px;
+        min-height: 64px;
         cursor: pointer;
         position: relative;
+        box-shadow: none !important;
+        outline: none !important;
+      }
+      .obsidian-calendar__day:hover,
+      .obsidian-calendar__day:focus {
+        background: transparent !important;
+        box-shadow: none !important;
       }
       .obsidian-calendar__day.is-outside {
         opacity: 0.4;
-      }
-      .obsidian-calendar__day.is-weekend {
-        opacity: 0.65;
       }
       .obsidian-calendar__day.is-today .obsidian-calendar__day-number::after {
         content: '';
@@ -1001,6 +1195,13 @@ export default class CalendarPlugin extends Plugin {
         position: relative;
         padding-bottom: 4px;
       }
+      .obsidian-calendar__day-subtitles {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        width: 100%;
+        min-height: 24px;
+      }
       .obsidian-calendar__day-subtitle {
         font-size: 10px;
         color: var(--text-muted);
@@ -1009,9 +1210,15 @@ export default class CalendarPlugin extends Plugin {
         text-overflow: ellipsis;
         width: 100%;
         text-align: center;
-        min-height: 12px;
+        line-height: 1.2;
         font-weight: 400;
-        opacity: 0.8;
+      }
+      .obsidian-calendar__day-note {
+        color: var(--text-normal);
+        opacity: 0.7;
+      }
+      .obsidian-calendar__day-event {
+        opacity: 0.85;
       }
       .obsidian-calendar__day-indicator {
         min-height: 6px;
@@ -1363,11 +1570,12 @@ export default class CalendarPlugin extends Plugin {
     const record = data as Partial<CalendarSettings> & { icalUrl?: string };
 
     const sources: CalendarSource[] = Array.isArray(record.sources)
-      ? record.sources.map((source) => ({
+      ? record.sources.map((source, index) => ({
         id: source.id || createSourceId(),
         name: source.name ?? "",
         enabled: source.enabled ?? true,
-        url: source.url ?? ""
+        url: source.url ?? "",
+        color: source.color ?? getDefaultSourceColor(index)
       }))
       : [];
 
@@ -1376,7 +1584,8 @@ export default class CalendarPlugin extends Plugin {
         id: createSourceId(),
         name: "Primary",
         enabled: true,
-        url: record.icalUrl.trim()
+        url: record.icalUrl.trim(),
+        color: getDefaultSourceColor(0)
       });
     }
 
@@ -1384,6 +1593,7 @@ export default class CalendarPlugin extends Plugin {
       sources,
       weekStart: record.weekStart ?? DEFAULT_SETTINGS.weekStart,
       timeFormat: record.timeFormat ?? DEFAULT_SETTINGS.timeFormat,
+      language: record.language ?? DEFAULT_SETTINGS.language,
       refreshIntervalMinutes: record.refreshIntervalMinutes ?? DEFAULT_SETTINGS.refreshIntervalMinutes,
       todayHighlight: record.todayHighlight ?? DEFAULT_SETTINGS.todayHighlight,
       selectedHighlight: record.selectedHighlight ?? DEFAULT_SETTINGS.selectedHighlight,

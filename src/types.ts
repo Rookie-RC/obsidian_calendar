@@ -3,6 +3,7 @@ export interface CalendarSource {
     name: string;
     enabled: boolean;
     url: string;
+    color: string;
 }
 
 export interface CalendarEvent {
@@ -27,6 +28,7 @@ export interface CalendarSettings {
     sources: CalendarSource[];
     weekStart: "sunday" | "monday";
     timeFormat: "12h" | "24h";
+    language: "en" | "zh";
     refreshIntervalMinutes: number;
     todayHighlight: string;
     selectedHighlight: string;

@@ -17,7 +17,7 @@
 
 ### 从 GitHub Release 安装（推荐）
 
-1. 从 [最新 Release](https://github.com/YOUR_USERNAME/obsidian_calendar/releases) 下载 `main.js`、`manifest.json` 和 `styles.css`
+1. 从 [最新 Release](https://github.com/YOUR_USERNAME/obsidian_calendar/releases) 下载 `main.js` 和 `manifest.json`
 2. 在你的 Vault 插件目录中创建文件夹：
 
    ```

@@ -1,0 +1,17 @@
+{
+  "name": "obsidian-calendar-mvp",
+  "version": "0.1.0",
+  "description": "Minimal Obsidian calendar plugin with iCal support.",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "node esbuild.config.mjs",
+    "dev": "node esbuild.config.mjs --watch",
+    "lint": "eslint . --ext .ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "esbuild": "^0.21.4",
+    "eslint": "^8.57.0",
+    "typescript": "^5.4.5"
+  }
+}

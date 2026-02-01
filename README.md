@@ -19,9 +19,11 @@
 
 1. 从 [最新 Release](https://github.com/YOUR_USERNAME/obsidian_calendar/releases) 下载 `main.js`、`manifest.json` 和 `styles.css`
 2. 在你的 Vault 插件目录中创建文件夹：
+
    ```
    /path/to/vault/.obsidian/plugins/obsidian-calendar-mvp/
    ```
+
 3. 将下载的文件复制到该文件夹中
 4. 在 Obsidian 中启用插件：
    - 设置 → 社区插件 → 启用 "Calendar MVP"

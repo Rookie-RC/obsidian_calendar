@@ -937,13 +937,13 @@ export default class CalendarPlugin extends Plugin {
     this.registerView(VIEW_TYPE_CALENDAR, (leaf) => new CalendarView(leaf, this));
     this.registerCommands();
     this.registerStyles();
-    this.applyHighlightVariables();
 
-    this.app.workspace.onLayoutReady(() => {
-      this.activateView();
+    this.app.workspace.onLayoutReady(async () => {
+      await this.activateView();
+      // 确保视图激活后立即刷新数据
+      await this.refreshEvents();
     });
 
-    this.refreshEvents();
     this.startAutoRefresh();
   }
 

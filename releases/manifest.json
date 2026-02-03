@@ -1,10 +1,10 @@
 {
-  "id": "obsidian-calendar-mvp",
-  "name": "Calendar MVP",
+  "id": "obsidian-calendar",
+  "name": "Calendar",
   "version": "0.1.0",
   "minAppVersion": "1.5.0",
-  "description": "Monthly calendar view with iCal (Google Calendar) support.",
-  "author": "Yu Wang, Ai",
-  "authorUrl": "https://openai.com",
+  "description": "Apple-inspired calendar with iCal sync, multi-source support, and seamless note integration.",
+  "author": "Rookie-RC",
+  "authorUrl": "https://github.com/Rookie-RC/obsidian_calendar",
   "isDesktopOnly": false
 }

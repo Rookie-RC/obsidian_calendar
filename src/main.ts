@@ -63,13 +63,13 @@ const TRANSLATIONS: Record<string, Record<string, string>> = {
   }
 };
 
-const t = (key: string, lang: "en" | "zh"): string => {
+function translate(key: string, lang: "en" | "zh"): string {
   return TRANSLATIONS[lang]?.[key] ?? TRANSLATIONS.en[key] ?? key;
-};
+}
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-const resolveHighlightValue = (value: string, fallbackVar: string) => {
+function resolveHighlightValue(value: string, fallbackVar: string): string {
   const trimmed = value.trim();
   if (!trimmed) {
     return getComputedStyle(document.body).getPropertyValue(fallbackVar).trim();
@@ -79,9 +79,11 @@ const resolveHighlightValue = (value: string, fallbackVar: string) => {
     return resolved || trimmed;
   }
   return trimmed;
-};
+}
 
-const normalizePathSlashes = (value: string) => value.replace(/\\/g, "/");
+function normalizePathSlashes(value: string): string {
+  return value.replace(/\\/g, "/");
+}
 
 const DEFAULT_SOURCE_COLORS = [
   "#e74c3c", // red
@@ -94,9 +96,9 @@ const DEFAULT_SOURCE_COLORS = [
   "#34495e"  // dark gray
 ];
 
-const getDefaultSourceColor = (index: number): string => {
+function getDefaultSourceColor(index: number): string {
   return DEFAULT_SOURCE_COLORS[index % DEFAULT_SOURCE_COLORS.length];
-};
+}
 
 type LinkedNote = {
   file: TFile;
@@ -104,14 +106,14 @@ type LinkedNote = {
   excerpt: string;
 };
 
-const formatDateKey = (date: Date) => {
+function formatDateKey(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
-};
+}
 
-const parseFrontmatterDate = (value: unknown): Date | null => {
+function parseFrontmatterDate(value: unknown): Date | null {
   if (value instanceof Date && !Number.isNaN(value.getTime())) {
     return value;
   }
@@ -126,9 +128,9 @@ const parseFrontmatterDate = (value: unknown): Date | null => {
     }
   }
   return null;
-};
+}
 
-const extractFrontmatterDates = (value: unknown): Date[] => {
+function extractFrontmatterDates(value: unknown): Date[] {
   if (Array.isArray(value)) {
     return value
       .map((item) => parseFrontmatterDate(item))
@@ -136,37 +138,47 @@ const extractFrontmatterDates = (value: unknown): Date[] => {
   }
   const single = parseFrontmatterDate(value);
   return single ? [single] : [];
-};
+}
 
-const startOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1);
-const endOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0);
+function startOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
 
-const addDays = (date: Date, days: number) =>
-  new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+function endOfMonth(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+}
 
-const isSameDay = (a: Date, b: Date) =>
-  a.getFullYear() === b.getFullYear() &&
-  a.getMonth() === b.getMonth() &&
-  a.getDate() === b.getDate();
+function addDays(date: Date, days: number): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+}
 
-const formatTime = (date: Date, format: CalendarSettings["timeFormat"]) => {
+function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+}
+
+function formatTime(date: Date, format: CalendarSettings["timeFormat"]): string {
   if (format === "24h") {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
   }
   return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit", hour12: true });
-};
+}
 
-const clampToDayStart = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+function clampToDayStart(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
 
-const clampToDayEnd = (date: Date) =>
-  new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+function clampToDayEnd(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+}
 
-const createSourceId = () => {
+function createSourceId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();
   }
   return `src-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-};
+}
 
 class CalendarView extends ItemView {
   private plugin: CalendarPlugin;
@@ -253,8 +265,8 @@ class CalendarView extends ItemView {
 
     // 中间：今天和刷新
     const centerGroup = this.navEl.createDiv({ cls: "obsidian-calendar__nav-center" });
-    const todayBtn = centerGroup.createEl("button", { text: t("today", lang) });
-    const refreshBtn = centerGroup.createEl("button", { text: t("refresh", lang) });
+    const todayBtn = centerGroup.createEl("button", { text: translate("today", lang) });
+    const refreshBtn = centerGroup.createEl("button", { text: translate("refresh", lang) });
 
     // 右侧：下一页
     const rightGroup = this.navEl.createDiv({ cls: "obsidian-calendar__nav-right" });
@@ -314,7 +326,7 @@ class CalendarView extends ItemView {
       : ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
     for (const key of weekdayKeys) {
-      weekdayRow.createDiv({ cls: "obsidian-calendar__weekday", text: t(key, lang) });
+      weekdayRow.createDiv({ cls: "obsidian-calendar__weekday", text: translate(key, lang) });
     }
 
     const daysGrid = this.gridEl.createDiv({ cls: "obsidian-calendar__days" });
@@ -427,7 +439,7 @@ class CalendarView extends ItemView {
 
     if (events.length > 0) {
       const eventsSection = this.detailsEl.createDiv({ cls: "obsidian-calendar__section" });
-      eventsSection.createDiv({ cls: "obsidian-calendar__section-title", text: t("events", lang) });
+      eventsSection.createDiv({ cls: "obsidian-calendar__section-title", text: translate("events", lang) });
       const eventsList = eventsSection.createDiv({ cls: "obsidian-calendar__event-list" });
       for (const event of events) {
         const row = eventsList.createDiv({ cls: "obsidian-calendar__event-row" });
@@ -439,7 +451,7 @@ class CalendarView extends ItemView {
 
         row.createDiv({
           cls: "obsidian-calendar__event-time",
-          text: event.allDay ? t("allDay", lang) : formatTime(event.start, this.plugin.settings.timeFormat)
+          text: event.allDay ? translate("allDay", lang) : formatTime(event.start, this.plugin.settings.timeFormat)
         });
         row.createDiv({ cls: "obsidian-calendar__event-summary", text: event.summary });
       }
@@ -447,7 +459,7 @@ class CalendarView extends ItemView {
 
     if (notes.length > 0) {
       const notesSection = this.detailsEl.createDiv({ cls: "obsidian-calendar__section" });
-      notesSection.createDiv({ cls: "obsidian-calendar__section-title", text: t("notes", lang) });
+      notesSection.createDiv({ cls: "obsidian-calendar__section-title", text: translate("notes", lang) });
       const notesList = notesSection.createDiv({ cls: "obsidian-calendar__notes-list" });
       for (const note of notes) {
         const row = notesList.createEl("button", { cls: "obsidian-calendar__note-row" });
@@ -460,12 +472,12 @@ class CalendarView extends ItemView {
     }
 
     if (notes.length === 0 && events.length === 0) {
-      this.detailsEl.createDiv({ cls: "obsidian-calendar__details-empty", text: t("noNotesOrEvents", lang) });
+      this.detailsEl.createDiv({ cls: "obsidian-calendar__details-empty", text: translate("noNotesOrEvents", lang) });
     }
 
     if (this.plugin.settings.allowCreateNote) {
       const action = this.detailsEl.createDiv({ cls: "obsidian-calendar__details-action" });
-      const button = action.createEl("button", { text: t("createNote", lang) });
+      const button = action.createEl("button", { text: translate("createNote", lang) });
       button.addEventListener("click", async () => {
         const file = await this.plugin.createNoteForDate(this.selectedDate);
         if (file) {

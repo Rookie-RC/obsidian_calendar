@@ -1,15 +1,16 @@
 # Obsidian Calendar 插件
 
-一款简洁优雅的 Obsidian 日历插件，支持 iCal 订阅（Google Calendar）和本地笔记整合，采用 Apple Calendar 风格设计。
+一款简洁优雅的 Obsidian 日历插件，支持多个 iCal 源订阅、多语言界面（中英文）和本地笔记整合，采用 Apple Calendar 风格设计。
 
 ## ✨ 主要特性
 
 - 📅 **月视图日历** - 清爽的月历视图，支持快速导航
-- 🔗 **iCal 订阅支持** - 整合 Google Calendar 等 iCal 格式日历源
+- 🔗 **多源 iCal 订阅** - 同时整合多个 Google Calendar 等 iCal 格式日历源，每个源独立颜色
+- 🌐 **多语言支持** - 中英文界面切换
 - 📝 **笔记关联** - 通过 frontmatter 日期字段自动关联笔记
 - 🎨 **Apple 风格设计** - 简洁、克制、优雅的视觉体验
 - 🌓 **深浅色主题** - 完美适配 Obsidian 明暗主题
-- ⚡ **快速创建笔记** - 一键为选定日期创建笔记
+- ⚡ **快速创建笔记** - 一键为选定日期创建笔记，支持模板
 - 🎯 **笔记密度指示** - 可视化显示每日笔记数量
 - 🔄 **自动刷新** - 定时同步日历数据
 
@@ -17,22 +18,22 @@
 
 ### 从 GitHub Release 安装（推荐）
 
-1. 从 [最新 Release](https://github.com/YOUR_USERNAME/obsidian_calendar/releases) 下载 `main.js` 和 `manifest.json`
+1. 从 [最新 Release](https://github.com/Rookie-RC/obsidian_calendar/releases) 下载 `main.js` 和 `manifest.json`
 2. 在你的 Vault 插件目录中创建文件夹：
 
    ```
-   /path/to/vault/.obsidian/plugins/obsidian-calendar-mvp/
+   /path/to/vault/.obsidian/plugins/obsidian-calendar/
    ```
 
 3. 将下载的文件复制到该文件夹中
 4. 在 Obsidian 中启用插件：
-   - 设置 → 社区插件 → 启用 "Calendar MVP"
+   - 设置 → 社区插件 → 启用 "Calendar"
 
 ### 手动构建
 
 ```bash
 # 克隆仓库
-git clone https://github.com/YOUR_USERNAME/obsidian_calendar.git
+git clone https://github.com/Rookie-RC/obsidian_calendar.git
 cd obsidian_calendar
 
 # 安装依赖
@@ -74,21 +75,28 @@ date: 2026-02-01
 
 ### 基础设置
 
+- **语言**: 选择界面语言（中文/English）
 - **刷新间隔**: 日历数据自动刷新的时间间隔（分钟）
 - **周起始日**: 选择周一或周日作为每周第一天
 - **时间格式**: 12 小时制或 24 小时制
 
+### 日历源管理
+
+- **多源支持**: 可添加多个 iCal 日历源
+- **独立颜色**: 每个日历源可设置独立的颜色标识
+- **启用/禁用**: 灵活控制每个源的显示状态
+
 ### 视觉定制
 
-- **Today 高亮色**: 今天日期的强调色
-- **选中日期高亮色**: 当前选中日期的强调色
-- **笔记密度条颜色**: 日期下方笔记数量指示条的颜色
+- **Today 高亮色**: 今天日期的强调色（默认：#29a5c7）
+- **选中日期高亮色**: 当前选中日期的强调色（默认：#54df26）
+- **笔记密度条颜色**: 日期下方笔记数量指示条的颜色（默认：#ea640b）
 
 ### 笔记设置
 
 - **笔记日期字段**: 用于关联笔记的 frontmatter 字段（支持多个，逗号分隔）
 - **允许创建笔记**: 是否显示快速创建笔记按钮
-- **笔记模板**: 选择创建笔记时使用的模板文件
+- **笔记模板**: 选择创建笔记时使用的模板文件（支持文件夹/文件两级选择）
 
 ## 🎨 设计理念
 

@@ -1,9 +1,9 @@
 {
-  "id": "obsidian-calendar",
+  "id": "obsidian-CalendarWithAgenda",
   "name": "Calendar",
   "version": "0.1.0",
   "minAppVersion": "1.5.0",
-  "description": "Apple-inspired calendar with iCal sync, multi-source support, and seamless note integration.",
+  "description": "calendar with iCal sync, multi-source support, and seamless note integration.",
   "author": "Rookie-RC",
   "authorUrl": "https://github.com/Rookie-RC/obsidian_calendar",
   "isDesktopOnly": false
